@@ -175,9 +175,19 @@ describe('SEO singleton cardinality — bar item 13', () => {
 });
 
 describe('substrate refinement parity', () => {
-	it('ANALYTICS_SLOT marker grep-findable in served HTML', async () => {
+	it('analytics snippet present exactly once in served HTML', async () => {
+		// Original D4 oracle was "ANALYTICS_SLOT marker grep-findable" (the
+		// empty-marker stage). After M wired Umami 2026-05-29, the marker
+		// was replaced by the real `<script defer
+		// src="https://analytics.innersyntax.dev/script.js"
+		// data-website-id="aca6a030-619f-438b-b3a6-ec73425b598e"></script>`
+		// snippet. Same cardinality discipline — pointed at the live
+		// identifier instead of the placeholder. The data-website-id
+		// literal is specific enough to avoid false-positives.
 		const r = await fetchHtml('/');
-		expect(r.html).toContain('ANALYTICS_SLOT');
+		const matches =
+			r.html.match(/data-website-id="aca6a030-619f-438b-b3a6-ec73425b598e"/g) || [];
+		expect(matches.length).toBe(1);
 	});
 });
 
