@@ -12,7 +12,7 @@ Family of tools:
 ## Develop
 
 ```sh
-git clone --recurse-submodules https://github.com/Milkslayer/diff-dexli.git
+git clone --recurse-submodules https://github.com/dexli-dev/diff-dexli.git
 cd diff-dexli
 npm install
 npm run dev

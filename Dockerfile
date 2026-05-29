@@ -27,7 +27,7 @@
 FROM alpine:3.20 AS submodules
 ARG DEXLI_FAMILY_SHA=da5544d0b7fc34ab70c59b1130e37b45d417b528
 RUN apk add --no-cache git
-RUN git clone https://github.com/Milkslayer/dexli-family.git /vendored-dexli-family \
+RUN git clone https://github.com/dexli-dev/dexli-family.git /vendored-dexli-family \
     && cd /vendored-dexli-family \
     && git checkout ${DEXLI_FAMILY_SHA} \
     && rm -rf .git
@@ -59,7 +59,7 @@ WORKDIR /app
 
 LABEL org.opencontainers.image.title="diff" \
       org.opencontainers.image.description="diff.dexli.dev — paste two pieces of text, see what changed, share the comparison via URL. Part of the dexli.dev tiny-tools family." \
-      org.opencontainers.image.source="https://github.com/Milkslayer/diff-dexli" \
+      org.opencontainers.image.source="https://github.com/dexli-dev/diff-dexli" \
       org.opencontainers.image.licenses="UNLICENSED"
 
 ENV NODE_ENV=production \
