@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+	<rect width="32" height="32" rx="7" fill="#0a0b0d" />
+	<!-- 'Δ' (capital delta) — placeholder family-fifth-distinct glyph for
+	     diff.dexli.dev. Distinct from every locked sibling glyph
+	     (⌁ webhook / ◷ cron / ∋ regex / ❖ apex). Same palette as sibling
+	     favicons (dark tile + #c6f135 lime). Drawn as path for consistent
+	     rendering across font availability. Engineer may swap the glyph
+	     + redraw per final D4 brand choice if a better fifth-distinct
+	     candidate surfaces; update Wordmark.svelte comment block in
+	     lockstep with any swap. -->
+	<path d="M16 6 L26 25 L6 25 Z" fill="none" stroke="#c6f135" stroke-width="2.2" stroke-linejoin="round" />
+</svg>
