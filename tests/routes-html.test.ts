@@ -177,16 +177,19 @@ describe('SEO singleton cardinality — bar item 13', () => {
 describe('substrate refinement parity', () => {
 	it('analytics snippet present exactly once in served HTML', async () => {
 		// Original D4 oracle was "ANALYTICS_SLOT marker grep-findable" (the
-		// empty-marker stage). After M wired Umami 2026-05-29, the marker
-		// was replaced by the real `<script defer
-		// src="https://analytics.innersyntax.dev/script.js"
-		// data-website-id="aca6a030-619f-438b-b3a6-ec73425b598e"></script>`
-		// snippet. Same cardinality discipline — pointed at the live
-		// identifier instead of the placeholder. The data-website-id
-		// literal is specific enough to avoid false-positives.
+		// empty-marker stage). M wired Umami 2026-05-29 with a shared
+		// `aca6a030-...` id; then later that day switched to per-tool sites
+		// for clean per-tool dashboards. This repo's per-tool id is
+		// `8e344abf-d097-43f4-8cac-a0fec37515d0`. Same cardinality
+		// discipline — exactly-one in served HTML, pointed at THIS repo's
+		// id. The data-website-id literal is specific enough to avoid
+		// false-positives, and matching the per-tool id (rather than the
+		// shared one or the snippet URL alone) catches cross-tool
+		// misconfiguration too — if someone accidentally copies a sibling's
+		// snippet into this app.html, this test fails.
 		const r = await fetchHtml('/');
 		const matches =
-			r.html.match(/data-website-id="aca6a030-619f-438b-b3a6-ec73425b598e"/g) || [];
+			r.html.match(/data-website-id="8e344abf-d097-43f4-8cac-a0fec37515d0"/g) || [];
 		expect(matches.length).toBe(1);
 	});
 });
