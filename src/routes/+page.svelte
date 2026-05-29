@@ -1,69 +1,117 @@
+<script lang="ts" module>
+	// SEO surface for diff.dexli.dev — bar item 13. All 12 singletons declared
+	// exactly-once below. JSON-LD WebApplication with applicationCategory =
+	// DeveloperApplication (per D2 lineage where sibling tools are
+	// WebApplications, hub is WebSite).
+	const SEO = {
+		title: 'diff · dexli.dev',
+		description:
+			'Two-pane text diff. Paste, see line- or word-level changes, share the URL. No account, no install — all state lives in the address bar.',
+		url: 'https://diff.dexli.dev/',
+		ogImage: 'https://diff.dexli.dev/og-card.png'
+	};
+	const JSON_LD = {
+		'@context': 'https://schema.org',
+		'@type': 'WebApplication',
+		name: 'diff.dexli.dev',
+		description: SEO.description,
+		url: SEO.url,
+		applicationCategory: 'DeveloperApplication',
+		operatingSystem: 'Any',
+		offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
+	};
+</script>
+
 <script lang="ts">
-	// diff.dexli.dev — D4 venture-4 cycle 1 scope.
-	//
-	// CTO SCAFFOLD: engineer onboarding surface. Two slots below — Wordmark
-	// brand-shell (CTO-owned, do not edit) and the diff app body
-	// (FRONTEND slice). Bar item 10's brand-inheritance oracle is satisfied
-	// by the Wordmark render regardless of what frontend builds in the body.
-	// Footer placement is FRONTEND slice (per D2/D3 family-footer-inheritance
-	// pattern — sibling-link inventory + locked literals identical to
-	// dexli-hub's SiteFooter).
-	//
-	// Engineer fills bar items inside <main>:
-	//   1 frictionless first-load (pre-populated panes, no overlay/modal)
-	//   2 live diff <200ms after last keystroke
-	//   3 three coordinated diff affordances (line marker + word-level + dual-pane visibility)
-	//   4 two diff modes (line default + word) with URL state
-	//   5 edge-content states clean
-	//   6 URL-shareable + 4096-byte ceiling with explicit refusal
-	//   7 family-handoff inbound recipient via vendored/dexli-family parser
-	//   8 mobile 375px reachable
-	//   9 100KB per-pane cap with explicit refusal
-	//   13 SEO surface via <svelte:head>
-	//
-	// Item 10 (Wordmark + family 5th-distinct glyph) — CTO scaffold's
-	// Wordmark default is 'Δ' (capital delta — universal change/diff
-	// symbol, semantically obvious, distinct from {⌁,◷,∋,❖}). Frontend may
-	// override the glyph prop on usage if a better fifth-distinct choice
-	// surfaces; update Wordmark.svelte's comment block to reflect the
-	// final choice and re-assert distinctness if you swap.
-	//
-	// Item 7 — family-handoff. The @dexli/family library lives at
-	// vendored/dexli-family (git submodule pinned to dexli-family master).
-	// Import via the submodule path; do NOT vendor a behavioral clone.
-	// The shared parser/composer is the contract — code-path audit per
-	// CEO Q1.
 	import Wordmark from '$lib/components/Wordmark.svelte';
+	import SiteFooter from '$lib/components/SiteFooter.svelte';
+	import DiffPane from '$lib/components/DiffPane.svelte';
+	import DiffView from '$lib/components/DiffView.svelte';
+	import ModeSelector from '$lib/components/ModeSelector.svelte';
+	import ShareButton from '$lib/components/ShareButton.svelte';
+	import { writeUrlState, type DiffMode } from '$lib/url-state';
+	import { diffAsText } from '$lib/diff/serialize';
+	import { untrack } from 'svelte';
+
+	let { data } = $props();
+
+	// `data.initial` is the +page.ts load() result — captured once at mount
+	// as the seed for in-memory state. `untrack` makes the intent explicit
+	// (initial-value-only; not reactive to data prop changes) and silences
+	// Svelte's `state_referenced_locally` lint at the cost of one extra line.
+	let a = $state(untrack(() => data.initial.a));
+	let b = $state(untrack(() => data.initial.b));
+	let mode = $state<DiffMode>(untrack(() => data.initial.mode));
+
+	// Debounced URL sync. URL stays the share-target source of truth via
+	// the in-memory state below; this $effect keeps the address bar in
+	// step (~400ms after last keystroke) so address-bar copy works too.
+	$effect(() => {
+		const params = writeUrlState({ a, b, mode });
+		const query = params.toString();
+		const next = query ? `?${query}` : '/';
+		if (typeof window !== 'undefined') {
+			const handle = setTimeout(() => {
+				try {
+					history.replaceState(history.state, '', next);
+				} catch {
+					// e.g. cross-origin iframe — ignore; in-memory state remains source of truth
+				}
+			}, 400);
+			return () => clearTimeout(handle);
+		}
+	});
+
+	const fallbackText = $derived(diffAsText(a, b, mode));
 </script>
 
 <svelte:head>
-	<title>diff · dexli.dev</title>
+	<title>{SEO.title}</title>
+	<meta name="description" content={SEO.description} />
+	<link rel="canonical" href={SEO.url} />
+	<meta name="robots" content="index,follow" />
+
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content={SEO.url} />
+	<meta property="og:title" content={SEO.title} />
+	<meta property="og:description" content={SEO.description} />
+	<meta property="og:image" content={SEO.ogImage} />
+
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={SEO.title} />
+	<meta name="twitter:description" content={SEO.description} />
+
+	{@html `<script type="application/ld+json">${JSON.stringify(JSON_LD)}</script>`}
 </svelte:head>
 
 <div class="page">
-	<!-- BRAND-SHELL :: CTO-owned. Frontend may add chrome controls AROUND
-	     the Wordmark in the header (share-the-URL affordance per item 6
-	     can live here or in a primary chrome bar adjacent to it); do not
-	     remove or replace the Wordmark itself. -->
 	<header class="topbar wrap">
 		<Wordmark />
-		<!-- FRONTEND: chrome controls (share affordance, mode selector,
-		     etc.) belong here or in a primary bar inside <main>. -->
 	</header>
 
-	<!-- DIFF APP BODY :: FRONTEND slice. Build bar items 1–9 inside <main>
-	     plus item 13 SEO meta in <svelte:head> above. -->
 	<main class="wrap" data-engineer-slot="diff">
-		<!-- TODO(frontend): two diff panes (a, b), live-diff rendering,
-		     mode selector (line | word), share affordance, edge-state
-		     handling, mobile 375px reflow. -->
+		<section class="hero" aria-label="introduction">
+			<h1>diff</h1>
+			<p class="lede">
+				Paste two pieces of text. See what changed, line- or word-level. Share the URL — state
+				lives in the address bar.
+			</p>
+		</section>
+
+		<section class="controls" aria-label="diff controls">
+			<ModeSelector bind:value={mode} />
+			<ShareButton diffState={{ a, b, mode }} {fallbackText} />
+		</section>
+
+		<section class="panes" aria-label="diff input panes">
+			<DiffPane label="left" labelText="left" bind:value={a} placeholder="paste the original text here" />
+			<DiffPane label="right" labelText="right" bind:value={b} placeholder="paste the changed text here" />
+		</section>
+
+		<DiffView {a} {b} {mode} />
 	</main>
 
-	<!-- FAMILY-FOOTER :: FRONTEND slice per D2/D3 inheritance pattern.
-	     Surface "dexli.dev family" identity + links to webhook.dexli.dev
-	     + cron.dexli.dev + regex.dexli.dev + the apex hub dexli.dev.
-	     DOM should match dexli-hub's SiteFooter verbatim (link inventory
-	     + locked literals identical per family-footer-inheritance rule). -->
+	<SiteFooter />
 </div>
 
 <style>
@@ -92,5 +140,56 @@
 		flex: 1;
 		padding-top: 8px;
 		padding-bottom: 56px;
+	}
+
+	.hero {
+		padding-top: 36px;
+		padding-bottom: 24px;
+		max-width: 720px;
+	}
+	.hero h1 {
+		font-family: var(--display);
+		font-size: clamp(40px, 6vw, 56px);
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1.05;
+		margin: 0 0 14px 0;
+	}
+	.lede {
+		font-family: var(--display);
+		font-size: clamp(15px, 2vw, 17px);
+		font-weight: 500;
+		line-height: 1.5;
+		color: var(--muted);
+		margin: 0;
+	}
+
+	.controls {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 14px;
+		padding: 12px 0;
+	}
+
+	.panes {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 16px;
+		margin-top: 6px;
+	}
+
+	@media (max-width: 880px) {
+		.panes {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (max-width: 640px) {
+		.wrap {
+			padding: 0 14px;
+		}
+		.hero {
+			padding-top: 24px;
+		}
 	}
 </style>
