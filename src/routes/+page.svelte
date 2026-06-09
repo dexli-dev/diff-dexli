@@ -6,7 +6,7 @@
 	const SEO = {
 		title: 'diff · dexli.dev',
 		description:
-			'Two-pane text diff. Paste, see line- or word-level changes, share the URL. No account, no install — all state lives in the address bar.',
+			'Two-pane diff for text and JSON. See line- or word-level changes, or a structural JSON compare that ignores key order. No account, no install — all state lives in the address bar.',
 		url: 'https://diff.dexli.dev/',
 		ogImage: 'https://diff.dexli.dev/og-card.png'
 	};
@@ -93,8 +93,9 @@
 		<section class="hero" aria-label="introduction">
 			<h1>diff</h1>
 			<p class="lede">
-				Paste two pieces of text. See what changed, line- or word-level. Share the URL — state
-				lives in the address bar.
+				Paste two pieces of text, or two JSON values. See what changed — line, word, or a
+				structural JSON compare that ignores key order. Share the URL — state lives in the address
+				bar.
 			</p>
 		</section>
 
