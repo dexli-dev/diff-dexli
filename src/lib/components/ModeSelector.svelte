@@ -10,6 +10,15 @@
 	}
 
 	let { value = $bindable('line') }: Props = $props();
+
+	// Button labels are derived from the raw mode string. The CSS uppercases
+	// them, so 'line'/'word' already read cleanly; this map exists so 'json'
+	// shows as the proper acronym and any future mode can override its label.
+	const MODE_LABELS: Record<DiffMode, string> = {
+		line: 'line',
+		word: 'word',
+		json: 'JSON'
+	};
 </script>
 
 <div class="mode-group" role="radiogroup" aria-label="Diff granularity">
@@ -22,7 +31,7 @@
 			aria-checked={value === mode}
 			onclick={() => (value = mode)}
 		>
-			{mode}
+			{MODE_LABELS[mode]}
 		</button>
 	{/each}
 </div>

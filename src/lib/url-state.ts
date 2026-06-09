@@ -22,10 +22,12 @@
 //     This is intentional: the receiver pane is empty either way.
 
 /**
- * The two diff modes the v1 bar enumerates. `line` is the default; `word`
- * is the alternative. char-level granularity skipped per product call 1.
+ * The diff modes the app enumerates. `line` is the default; `word` is the
+ * text-granularity alternative; `json` is the structural JSON-diff mode (a
+ * recursive value-tree comparison, not a text/LCS diff). char-level
+ * granularity skipped per product call 1.
  */
-export const DIFF_MODES = ['line', 'word'] as const;
+export const DIFF_MODES = ['line', 'word', 'json'] as const;
 
 export type DiffMode = (typeof DIFF_MODES)[number];
 

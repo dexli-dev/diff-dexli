@@ -92,6 +92,13 @@ describe('writeUrlState', () => {
 		expect(params.has('b')).toBe(false);
 	});
 
+	it('emits mode=json for the structural JSON mode', () => {
+		const params = writeUrlState({ a: '{"a":1}', b: '{"a":2}', mode: 'json' });
+		expect(params.get('mode')).toBe('json');
+		expect(params.get('a')).toBe('{"a":1}');
+		expect(params.get('b')).toBe('{"a":2}');
+	});
+
 	it('preserves multiline a / b verbatim (newlines percent-encoded)', () => {
 		const a = 'one\ntwo\nthree';
 		const params = writeUrlState({ a, b: '', mode: DEFAULT_MODE });
@@ -113,6 +120,7 @@ describe('round-trip readUrlState(writeUrlState(...))', () => {
 		{ a: '', b: '', mode: 'line' },
 		{ a: 'L', b: 'R', mode: 'line' },
 		{ a: 'L', b: 'R', mode: 'word' },
+		{ a: '{"a":1}', b: '{"a":2}', mode: 'json' },
 		{ a: 'multi\nline\ncontent', b: 'other\ncontent', mode: 'word' },
 		{ a: 'café 漢字 🚀', b: '!@#$%^&*()=+/?', mode: 'line' },
 		{ a: 'a'.repeat(2048), b: 'b'.repeat(2048), mode: 'word' },

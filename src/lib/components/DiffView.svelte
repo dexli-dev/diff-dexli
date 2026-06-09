@@ -12,7 +12,8 @@
 	// instead of freezing the browser (bar item 9).
 
 	import { diffLines, diffWords } from '$lib/diff/engine';
-	import type { LineDiffRow, SpanRun, WordDiff } from '$lib/diff/types';
+	import { parseJsonSafe, diffJson } from '$lib/diff/json';
+	import type { LineDiffRow, SpanRun, WordDiff, JsonDiffResult } from '$lib/diff/types';
 	import { PANE_BYTE_CAP, utf8ByteLength } from '$lib/diff/cap';
 	import type { DiffMode } from '$lib/url-state';
 
@@ -28,7 +29,10 @@
 	const bBytes = $derived(utf8ByteLength(b));
 	const anyOverCap = $derived(aBytes > PANE_BYTE_CAP || bBytes > PANE_BYTE_CAP);
 	const bothEmpty = $derived(a === '' && b === '');
-	const identical = $derived(a === b && a !== '');
+	// In json mode the structural verdict banner ("structurally equal") covers
+	// the identical case, so we only show the generic "No changes" banner for
+	// the text modes.
+	const identical = $derived(a === b && a !== '' && mode !== 'json');
 
 	const lineResult = $derived.by(() => {
 		if (anyOverCap || bothEmpty || identical || mode !== 'line') return null;
@@ -43,8 +47,36 @@
 	const diffTooLarge = $derived.by(() => {
 		if (anyOverCap || bothEmpty || identical) return false;
 		if (mode === 'line') return lineResult === null;
-		return wordResult === null;
+		if (mode === 'word') return wordResult === null;
+		return false; // json mode does no LCS — never "too large" for the engine budget
 	});
+
+	// ── JSON mode: parse each pane independently, surface a per-pane error. ──
+	const leftParse = $derived.by(() =>
+		mode === 'json' && !anyOverCap && !bothEmpty ? parseJsonSafe(a) : null
+	);
+	const rightParse = $derived.by(() =>
+		mode === 'json' && !anyOverCap && !bothEmpty ? parseJsonSafe(b) : null
+	);
+	const jsonError = $derived.by(() => {
+		if (leftParse && !leftParse.ok) return { pane: 'left' as const, error: leftParse.error };
+		if (rightParse && !rightParse.ok) return { pane: 'right' as const, error: rightParse.error };
+		return null;
+	});
+	const jsonResult = $derived.by<JsonDiffResult | null>(() => {
+		if (mode !== 'json' || anyOverCap || bothEmpty) return null;
+		if (!leftParse || !leftParse.ok || !rightParse || !rightParse.ok) return null;
+		return diffJson(leftParse.value, rightParse.value);
+	});
+
+	/** Compact one-line rendering of a JSON value for the differences list. */
+	function jsonValue(value: unknown): string {
+		try {
+			return JSON.stringify(value) ?? String(value);
+		} catch {
+			return String(value);
+		}
+	}
 </script>
 
 <section class="diff-view" aria-label="Diff output">
@@ -64,6 +96,12 @@
 		<div class="state-banner state-warn" role="status">
 			Diff too large to render at this size — try comparing smaller sections.
 		</div>
+	{:else if mode === 'json' && jsonError}
+		<div class="state-banner state-warn" role="status">
+			Invalid JSON in the {jsonError.pane} pane — {jsonError.error}
+		</div>
+	{:else if mode === 'json' && jsonResult}
+		{@render jsonMode(jsonResult)}
 	{:else if mode === 'line' && lineResult}
 		{@render lineMode(lineResult)}
 	{:else if mode === 'word' && wordResult}
@@ -106,6 +144,38 @@
 		<div class="col col-right" aria-label="Right source with additions highlighted">
 			{#each result.rightSpans as span, i (i)}<span class="span span-{span.kind}">{span.text}</span>{/each}
 		</div>
+	</div>
+{/snippet}
+
+{#snippet jsonMode(result: JsonDiffResult)}
+	<div class="json-mode">
+		{#if result.equal}
+			<div class="state-banner json-verdict json-verdict-equal" role="status">
+				Structurally equal — the two JSON values match (key order ignored).
+			</div>
+		{:else}
+			<div class="state-banner json-verdict json-verdict-diff" role="status">
+				{result.differences.length}
+				{result.differences.length === 1 ? 'difference' : 'differences'}
+			</div>
+			<ul class="json-diff-list" aria-label="Structural differences">
+				{#each result.differences as diff, i (i)}
+					<li class="json-diff json-diff-{diff.kind}">
+						<span class="json-kind">{diff.kind}</span>
+						<code class="json-path">{diff.path}</code>
+						{#if diff.kind === 'added'}
+							<code class="json-val json-after">{jsonValue(diff.after)}</code>
+						{:else if diff.kind === 'removed'}
+							<code class="json-val json-before">{jsonValue(diff.before)}</code>
+						{:else}
+							<code class="json-val json-before">{jsonValue(diff.before)}</code>
+							<span class="json-arrow" aria-hidden="true">→</span>
+							<code class="json-val json-after">{jsonValue(diff.after)}</code>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	</div>
 {/snippet}
 
@@ -219,6 +289,83 @@
 		color: var(--fg);
 		border-radius: 2px;
 		padding: 0 1px;
+	}
+
+	/* ── JSON structural-diff mode ── */
+	.json-mode {
+		font-family: var(--mono);
+		font-size: 12.5px;
+		line-height: 1.55;
+	}
+	.json-verdict {
+		font-weight: 600;
+		letter-spacing: 0.01em;
+	}
+	.json-verdict-equal {
+		color: var(--fg);
+		background: rgba(198, 241, 53, 0.10);
+		border-bottom: 1px solid rgba(198, 241, 53, 0.20);
+	}
+	.json-verdict-diff {
+		color: #e9b4a8;
+		background: rgba(224, 128, 112, 0.08);
+		border-bottom: 1px solid rgba(224, 128, 112, 0.18);
+		text-transform: uppercase;
+	}
+	.json-diff-list {
+		list-style: none;
+		margin: 0;
+		padding: 6px 0;
+	}
+	.json-diff {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 8px;
+		padding: 5px 16px;
+		border-bottom: 1px solid var(--border-soft);
+	}
+	.json-diff:last-child {
+		border-bottom: 0;
+	}
+	.json-kind {
+		flex: 0 0 auto;
+		font-size: 10px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		padding: 1px 6px;
+		border-radius: 999px;
+	}
+	.json-diff-added .json-kind {
+		color: var(--bg);
+		background: rgba(198, 241, 53, 0.85);
+	}
+	.json-diff-removed .json-kind {
+		color: #f0c2b7;
+		background: rgba(224, 128, 112, 0.30);
+	}
+	.json-diff-changed .json-kind,
+	.json-diff-type-changed .json-kind {
+		color: var(--fg);
+		background: rgba(60, 64, 76, 0.55);
+	}
+	.json-path {
+		color: var(--fg);
+		font-weight: 600;
+		word-break: break-all;
+	}
+	.json-val {
+		word-break: break-all;
+	}
+	.json-before {
+		color: #f0c2b7;
+	}
+	.json-after {
+		color: var(--fg);
+	}
+	.json-arrow {
+		color: var(--muted);
 	}
 
 	@media (max-width: 880px) {
