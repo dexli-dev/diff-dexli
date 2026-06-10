@@ -14,6 +14,8 @@
 		<a href="https://cron.dexli.dev" rel="external">cron.dexli.dev</a>
 		·
 		<a href="https://regex.dexli.dev" rel="external">regex.dexli.dev</a>
+		·
+		<a href="https://transcript.dexli.dev" rel="external">transcript.dexli.dev</a>
 	</span>
 	<span class="dim">2026 · dexli.dev</span>
 </footer>
