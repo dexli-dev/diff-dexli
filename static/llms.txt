@@ -1,0 +1,29 @@
+# diff.dexli.dev
+
+> A two-pane diff for text and JSON. Paste two pieces of text or two JSON values and see what changed — line-level, word-level, or a structural JSON compare that ignores key order (arrays stay order-sensitive). Free, no signup — diffing happens in your browser.
+
+Part of the dexli.dev tiny-tools family: one tool per subdomain, honest copy, no accounts, no upsell.
+
+## URL state (agent-relevant)
+
+Both panes and the mode serialise into the URL, so you can construct a pre-filled link:
+
+    https://diff.dexli.dev/?a=<urlencoded left>&b=<urlencoded right>&mode=<line|word|json>
+
+- `a` — left pane contents, `b` — right pane contents
+- `mode` — `line` (default), `word`, or `json` (structural compare)
+- Defaults are omitted: an empty diff is just `https://diff.dexli.dev/`
+
+Example: `https://diff.dexli.dev/?a=hello%20world&b=hello%20there&mode=word`
+
+## Limits
+
+- JSON mode is a value-tree comparison, not a text diff — key order is ignored, array order matters.
+
+## Family
+
+- [dexli.dev](https://dexli.dev/): the family index ([llms.txt](https://dexli.dev/llms.txt))
+- [webhook.dexli.dev](https://webhook.dexli.dev/): temporary HTTP inbox for testing webhooks
+- [cron.dexli.dev](https://cron.dexli.dev/): cron expression parser and firings preview
+- [regex.dexli.dev](https://regex.dexli.dev/): live regex tester with shareable URL state
+- [transcript.dexli.dev](https://transcript.dexli.dev/): read LLM .jsonl logs as a conversation
